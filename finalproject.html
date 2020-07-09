@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html>
+  <head>
+
+      <link rel="stylesheet" href="https://js.arcgis.com/4.12/esri/themes/light/main.css">
+  <script src="https://js.arcgis.com/4.12/"></script>
+    <meta charset="utf-8">
+    <meta name="viewport" content="initial-scale=1, maximum-scale=1, user-scalable=no">
+    <title>FINAL PROJECT WEB APP </title>
+    <style>
+      html, body, #viewDiv {
+        padding: 0;
+        margin: 0;
+        height: 100%;
+        width: 100%;
+      }
+
+      .esri-view .esri-directions {
+      position: fixed;
+      right: 15px;
+    }
+    .esri-view .esri-component.esri-attribution {
+      position: fixed;
+    }
+
+    #btn{
+    	position:fixed;
+    	top:180px;
+    	left:15px;
+    	height:40px;
+    }
+    </style>
+
+    <script>
+
+var lon=0;
+var lat=0;
+
+  require([
+      "esri/Map",
+      "esri/views/MapView",
+      "esri/widgets/Directions",
+      "esri/widgets/Home",
+      "esri/widgets/Search",
+      "esri/widgets/Locate",
+      "esri/tasks/Geoprocessor",
+      "esri/geometry/SpatialReference",
+	  "esri/layers/GraphicsLayer",
+	  "esri/Graphic"
+    ],
+     function(Map, 
+	     	MapView, 
+	     	Directions, 
+	     	Home, 
+	     	Search, 
+	     	Locate,
+	     	Geoprocessor,
+	     	SpatialReference,
+			GraphicsLayer,
+			Graphic) {
+
+    var map = new Map({
+      basemap: "streets-navigation-vector"
+    });
+
+    var view = new MapView({
+      container: "viewDiv",
+      map: map,
+      center: [-0.173714, 5.622323], 
+      zoom: 11
+    });
+
+
+     var directions = new Directions({
+        view: view
+      });
+      view.ui.add(directions, "bottom-right");
+
+
+
+    var homeBtn = new Home({
+      view: view
+    });
+      view.ui.add(homeBtn, "top-left");
+
+
+    var search = new Search({
+        view: view
+      });
+
+
+
+      view.ui.add(search, "top-right");
+
+    var locateWidget = new Locate({
+  view: view
+});
+
+view.ui.add(locateWidget, "top-left");
+
+locateWidget.on("locate", function(locateEvent){
+    //console.log(locateEvent);
+    lon=locateEvent.position.coords.longitude;
+    lat=locateEvent.position.coords.latitude;
+    console.log(lon);
+    console.log(lat);
+
+    //console.log("locate: %s", mapView.scale);
+  })
+
+
+  
+  
+  
+ 
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+
+
+
+
+
+function errBack(value){
+	console.log(value);
+}
+
+function progTest(value) {
+  //message.innerText = "Job status: " + "'" + value.jobStatus + "'";
+  console.log(value.jobStatus);
+}
+
+function drawResultData(result){
+	console.log(result);
+	
+	gp.getResultData(result.jobId,"out_fc" ).then(resultData=>{
+		console.log(resultData.value.features);
+		
+		
+		var GraphicsArray = [];
+		resultData.value.features.forEach( (feature, index)=>{
+	
+	
+	
+	
+	
+	var symbol = {
+  type: "simple-marker",  // autocasts as new SimpleMarkerSymbol()
+  style: "circle",
+  color: "red",
+  size: "8px",  // pixels
+  outline: {  // autocasts as new SimpleLineSymbol()
+    color: [ 255, 0, 0 ],
+    width: 8  // points
+  }
+};
+
+var point = {
+        type: "point",
+        longitude: feature.geometry.longitude,
+        latitude: feature.geometry.latitude
+      };
+	  
+	  var popupTemplate = {
+        title: "{Name}",
+        content: "<b>{Description}</b>"
+      };
+	  
+	  
+	  
+	  pointGraphic = new Graphic({
+		  geometry: point,
+		  symbol: symbol,
+		  attributes: feature.attributes,
+		   popupTemplate: popupTemplate
+		});
+		
+		GraphicsArray.push(pointGraphic);
+		
+		});
+		
+		
+		
+		
+		var layer = new GraphicsLayer({
+			graphics: GraphicsArray
+		 });
+		 
+		 // Add GraphicsLayer to map
+		map.add(layer);
+		
+		
+		// zoom to the layer
+		view.goTo(GraphicsArray);
+		
+		
+		
+	});
+	
+}
+
+var gpUrl = "http://197.255.124.27:6080/arcgis/rest/services/BufferSelect/GPServer/BufferSelectModel"
+var gp = new Geoprocessor(gpUrl);
+
+var FindNearMe = function(){
+
+  	console.log("Lon:" + lon + " Lat:" + lat);
+  	gp.outSpatialReference = SpatialReference.WGS84;
+
+  	var params = {
+  		Lat__WGS84_: 9.403,
+  		Lon__WGS84_: -0.842,
+  		Buffer_Distance__m_:10000000000
+  	};
+
+  	gp.submitJob(params).then(drawResultData, errBack, progTest)
+  }
+
+
+	document.getElementById("btn").addEventListener("click", FindNearMe);
+
+
+    
+  });
+
+
+  </script>
+  </head>
+  <body>
+    <div id="viewDiv"></div>
+    <button id ="btn">Near Me</button>
+  </body>
+</html>
+
+
+
